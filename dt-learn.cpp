@@ -168,7 +168,7 @@ treeNode* MakeSubtree(const vector<int>& set, const unordered_set<int>& candidat
 // 	return true;
 // }
 pair<int,int> countLabel(const vector<int>& set){
-	pair<int,int> res;
+	pair<int,int> res = {0,0};
 	for (int i = 0; i < set.size; i++){
 		data[set[i]].back().nomi?res.first++:res.second++;
 	}
@@ -178,7 +178,7 @@ pair<int,int> countLabel(const vector<int>& set){
 
 pair<int,vector<vector<int>>> FindBestSplit(const vector<int>& set, const unordered_set<int>& candidateSplit){
 	pair<int,vector<vector<int>>> res;
-	double entro = INT_MAX;
+	double entro = DBL_MAX;
 	auto parent_p = countLabel(set);
 	for (int id : candidateSplit){
 		auto E = GetEntropy(id,set);
@@ -210,7 +210,7 @@ pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& s
 		double thr = getThreshold(feature_id,set);
 		vector<vector<int>> subsets(2,vector<int>());
 		for (auto x : set){
-			subsets[(data[x][feature_id]>thr?1:0)].push_back(x);
+			subsets[(data[x][feature_id].r>thr?1:0)].push_back(x);
 		}
 		double entro = 0 ;
 		for (auto subset : subsets){
