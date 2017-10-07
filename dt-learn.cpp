@@ -147,10 +147,11 @@ int findNextComma(string line,int cur){
 	return line.size();
 }
 
-treeNode* MakeSubtree(const vector<int>& set, const unordered_set<int>& candidateSplit, const pair<int,int>& p){   // p for label_classification pair for this specific pair
+treeNode* MakeSubtree(const vector<int>& set, const unordered_set<int>& candidateSplit){   // p for label_classification pair for this specific pair
 	auto C = candidateSplit;
-	// pair<int,int> p = countLabel(set);
-	auto s = FindBestSplit(set,C); //define s < 0 as the condition where no information gain is greater than 0
+	pair<int,int> p = countLabel(set);
+	auto s = FindBestSplit(set,C); 
+	double infoGain = 
 	if (set.size < m || C.empty() || s < 0 || (p.first == 0 || p.second == 0)){
 		treeNode* ch = new treeNode(-1,p);
 		ch->label = p.first > p.second ? 0:1 ;
@@ -175,16 +176,26 @@ pair<int,int> countLabel(const vector<int>& set){
 }
 
 
-pair<int,vector<vector<int>>> FindBestSplit(const vector<int>& set, const unordered_set<int>& candidateSplit, double currentH){
+pair<int,vector<vector<int>>> FindBestSplit(const vector<int>& set, const unordered_set<int>& candidateSplit){
 	pair<int,vector<vector<int>>> res;
+	double entro = INT_MAX;
+	auto parent_p = countLabel(set);
+	for (int id : candidateSplit){
+		auto E = GetEntropy(id,set);
+		if (E.first < entro){
+			entro = E.first;
+			res.first = id;
+			res.second = E.second;
+		}
+	}
+	return res;
 }
 pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& set){
 	if (att[feature_id].isNominal){
 		int n = att[feature_id].nominal_type.size();
 		vector<vector<int>> subsets(n,vector<int>());
-		for (int i = 0; i < set.size(); i++){
-			int val = data[set[i]][feature_id];
-			subsets[val].push_back(set[i]);
+		for (auto x : set){
+			subsets[data[x][feature_id]].push_back(x);
 		}
 		double entro = 0 ;
 		for (auto subset : subsets){
@@ -196,7 +207,29 @@ pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& s
 		return make_pair(entro,subsets);
 	}
 	else {
-		double thr =
+		double thr = getThreshold(feature_id,set);
+		vector<vector<int>> subsets(2,vector<int>());
+		for (auto x : set){
+			subsets[(data[x][feature_id]>thr?1:0)].push_back(x);
+		}
+		double entro = 0 ;
+		for (auto subset : subsets){
+			auto p = countLabel(subset);
+			double r = double(p.first+p.second)/set.size();
+			double pr = 1.0*p.first/(p.first+p.second);
+			entro += -1*r*(pr*log(pr)/log(2)+(1-pr)*log(1-pr)/log(2));
+		}
+		return make_pair(entro,subsets);
 	}
+}
+double getThreshold(int feature_id, cosnt vector<int>& set){
+	int minV;
+	int maxV;
+	minV = maxV = data[set[0]][feature_id].r;
+	for (auto x : set){
+		maxV = max(data[x][feature_id].r,maxV);
+		minV = min(data[x][feature_id].r,minV);
+	}
+	return (double(maxV+minV))/2;
 }
 
