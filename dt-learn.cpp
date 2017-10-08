@@ -1,6 +1,8 @@
 #include <bits/stdc++.h>
 using namespace std;
-
+inline double log2(double n){
+	return n?log(n)/log(2):0;
+}
 struct attribute{
 	string name;
 	bool isNominal;
@@ -71,13 +73,13 @@ int main(int argc, char const *argv[])
 		set.push_back(i);
 	}
 	unordered_set<int> attr;
-	for (int i = 0 ; i <att.size();i++){
+	for (int i = 0 ; i <att.size()-1;i++){
 		cout<<i<<":"<<att[i].name<<endl;
 		attr.insert(i);
 	}
-	// treeNode* root = MakeSubtree(set,attr);
-	double thr = 0 ;
-	auto t = FindBestSplit(set,attr,thr);
+	treeNode* root = MakeSubtree(set,attr);
+	// double thr = 0 ;
+	// auto t = FindBestSplit(set,attr,thr);
 
 	return 0;
 }
@@ -167,12 +169,14 @@ treeNode* MakeSubtree(const vector<int>& set, const unordered_set<int>& candidat
 	auto s = FindBestSplit(set,C,thr); 
 	// cout<<"pass findBestSplit"<<endl;
 	if (set.size() < m || C.empty() || s.first < 0 || (p.first == 0 || p.second == 0)){
+		// cout<<"oops"<<endl;
 		treeNode* ch = new treeNode(-1,p);
 		ch->label = p.first > p.second ? 0:1 ;
 		return ch;
 	}
 	else {
 		C.erase(s.first);
+		cout<<"feature_id:"<<s.first<<endl;
 		cout<<"Feature used this time  : "<<att[s.first].name<<" ratio:"<<p.first<<":"<<p.second<<endl;
 		treeNode* ch = new treeNode(s.first,p);
 		if (!att[s.first].isNominal){ch->threshold = thr;cout<<"threshold:"<<thr<<endl;}
@@ -202,7 +206,7 @@ pair<int,vector<vector<int>>> FindBestSplit(const vector<int>& set, const unorde
 	double entro = DBL_MAX;
 	auto parent_p = countLabel(set);
 	double p = (double(parent_p.first))/(parent_p.first+parent_p.second);
-	double parent_entropy = (-1)*p*log(p)/log(2)-(1-p)*log(1-p)/log(2);
+	double parent_entropy = (-1)*p*log2(p)-(1-p)*log2(1-p);
 	for (int id : candidateSplit){
 		double cur_th;
 		auto E = GetEntropy(id,set,cur_th);
@@ -225,20 +229,21 @@ pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& s
 		}
 		double entro = 0 ;
 		for (auto subset : subsets){
+			if (subset.empty()) continue;
 			auto p = countLabel(subset);
 			double r = double(p.first+p.second)/set.size();
 			double pr = (1.0*p.first)/(p.first+p.second);
-			entro += (-1)*r*(pr*log(pr)/log(2)+(1-pr)*log(1-pr)/log(2));
+			entro += (-1)*r*(pr*log2(pr)+(1-pr)*log2(1-pr));
 		}
 		return make_pair(entro,subsets);
 	}
 	else {
 		vector<double> candidate = getThreshold(feature_id,set);
-		cout<<"threshold candidate size:"<<candidate.size()<<endl;
+		// cout<<"threshold candidate size:"<<candidate.size()<<endl;
 		double ResEntro = DBL_MAX;
 		vector<vector<int>> ResSets(2,vector<int>());
 		for (auto th : candidate){
-			cout<<"candidate thr:"<<th<<endl;
+			// cout<<"candidate thr:"<<th<<endl;
 			vector<vector<int>> subsets(2,vector<int>());
 			for (auto x : set){
 			int k = data[x][feature_id].r>th?1:0;
@@ -246,10 +251,11 @@ pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& s
 			}
 			double entro = 0 ;
 			for (auto subset : subsets){
+				if (subset.empty())continue;
 				auto p = countLabel(subset);
 				double r = (double(p.first+p.second))/set.size();
 				double pr = (1.0*p.first)/(p.first+p.second);
-				entro += (-1)*r*(pr*log(pr)/log(2)+(1-pr)*log(1-pr)/log(2));
+				entro += (-1)*r*(pr*log2(pr)+(1-pr)*log2(1-pr));
 			}
 			if (entro < ResEntro){
 				ResEntro = entro;
