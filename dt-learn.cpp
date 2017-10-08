@@ -55,6 +55,11 @@ void readData(string file);
 void getAttribute(string line);
 void getData(string line);
 int findNextComma(string s, int cur);
+pair<int,int> countLabel(const vector<int>& v);
+treeNode* MakeSubtree(const vector<int>& set, const unordered_set<int>& candidateSplit);
+pair<int,vector<vector<int>>> FindBestSplit(const vector<int>& set, const unordered_set<int>& candidateSplit);
+pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& set);
+double getThreshold(int feature_id, const vector<int>& set);
 
 int main(int argc, char const *argv[])
 {
@@ -62,10 +67,16 @@ int main(int argc, char const *argv[])
 	
 	readData("heart_train.arff");
 	// printData();
+	m = 2;
 	vector<int> set;
 	for (int i = 0 ; i < data.size();i++){
 		set.push_back(i);
 	}
+	unordered_set<int> attr;
+	for (int i = 0 ; i <att.size();i++){
+		attr.insert(i);
+	}
+	treeNode* root = MakeSubtree(set,attr);
 
 	return 0;
 }
@@ -150,15 +161,22 @@ int findNextComma(string line,int cur){
 treeNode* MakeSubtree(const vector<int>& set, const unordered_set<int>& candidateSplit){   // p for label_classification pair for this specific pair
 	auto C = candidateSplit;
 	pair<int,int> p = countLabel(set);
+	// cout<<"PAss countLabel"<<endl;
 	auto s = FindBestSplit(set,C); 
-	double infoGain = 
-	if (set.size < m || C.empty() || s < 0 || (p.first == 0 || p.second == 0)){
+	// cout<<"pass findBestSplit"<<endl;
+	if (set.size() < m || C.empty() || s.first < 0 || (p.first == 0 || p.second == 0)){
 		treeNode* ch = new treeNode(-1,p);
 		ch->label = p.first > p.second ? 0:1 ;
 		return ch;
 	}
 	else {
-		 // Note that during the calculation of this function the feature with no information gain and the feature s will be deleted by reference
+		C.erase(s.first);
+		cout<<"Feature used this time  : "<<att[s.first].name<<" ratio:"<<p.first<<":"<<p.second<<endl;
+		treeNode* ch = new treeNode(s.first,p);
+		for (auto sub : s.second){
+			ch->child.push_back(MakeSubtree(sub,C));
+		}
+		return ch;
 	}
 }
 // bool isAllSame(const vector<int>& set){
@@ -169,7 +187,7 @@ treeNode* MakeSubtree(const vector<int>& set, const unordered_set<int>& candidat
 // }
 pair<int,int> countLabel(const vector<int>& set){
 	pair<int,int> res = {0,0};
-	for (int i = 0; i < set.size; i++){
+	for (int i = 0; i < set.size(); i++){
 		data[set[i]].back().nomi?res.first++:res.second++;
 	}
 	return res;
@@ -180,6 +198,8 @@ pair<int,vector<vector<int>>> FindBestSplit(const vector<int>& set, const unorde
 	pair<int,vector<vector<int>>> res;
 	double entro = DBL_MAX;
 	auto parent_p = countLabel(set);
+	double p = (double(parent_p.first))/(parent_p.first+parent_p.second);
+	double parent_entropy = -1*p*log(p)/log(2)-(1-p)*log(1-p)/log(2);
 	for (int id : candidateSplit){
 		auto E = GetEntropy(id,set);
 		if (E.first < entro){
@@ -188,6 +208,7 @@ pair<int,vector<vector<int>>> FindBestSplit(const vector<int>& set, const unorde
 			res.second = E.second;
 		}
 	}
+	if (parent_entropy - entro < 0) res.first = -1;
 	return res;
 }
 pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& set){
@@ -195,7 +216,7 @@ pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& s
 		int n = att[feature_id].nominal_type.size();
 		vector<vector<int>> subsets(n,vector<int>());
 		for (auto x : set){
-			subsets[data[x][feature_id]].push_back(x);
+			subsets[data[x][feature_id].nomi].push_back(x);
 		}
 		double entro = 0 ;
 		for (auto subset : subsets){
@@ -210,7 +231,8 @@ pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& s
 		double thr = getThreshold(feature_id,set);
 		vector<vector<int>> subsets(2,vector<int>());
 		for (auto x : set){
-			subsets[(data[x][feature_id].r>thr?1:0)].push_back(x);
+			int k = data[x][feature_id].r>thr?1:0;
+			subsets[k].push_back(x);
 		}
 		double entro = 0 ;
 		for (auto subset : subsets){
@@ -222,14 +244,24 @@ pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& s
 		return make_pair(entro,subsets);
 	}
 }
-double getThreshold(int feature_id, cosnt vector<int>& set){
-	int minV;
-	int maxV;
-	minV = maxV = data[set[0]][feature_id].r;
+double getThreshold(int feature_id, const vector<int>& set){
+	vector<double> C;
+	vector<double> value;
+	unordered_map<double,vector<int>> subsets;
 	for (auto x : set){
-		maxV = max(data[x][feature_id].r,maxV);
-		minV = min(data[x][feature_id].r,minV);
+		double val = data[x][feature_id].r;
+		subsets[val].push_back(x);
+		value.push_back(val);
 	}
-	return (double(maxV+minV))/2;
+	sort(value.begin(),value.end());
+	for (int i = 1 ; i < value.size();i++){
+		auto p1 = countLabel(subsets[value[i-1]]);
+		auto p2 = countLabel(subsets[value[i]]);
+		if ((p1.first && p2.second) || (p1.first && p2.second)){
+			C.push_back((value[i-1] + value[i])/2);
+		}
+	}
+	// if (C.size()) cout<<"hello world!"<<endl;
+	return C.empty()?DBL_MAX:C[0];
 }
 
