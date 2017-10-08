@@ -172,7 +172,7 @@ treeNode* MakeSubtree(const vector<int>& set, const unordered_set<int>& candidat
 		C.erase(s.first);
 		// cout<<"Feature used this time  : "<<att[s.first].name<<" ratio:"<<p.first<<":"<<p.second<<endl;
 		treeNode* ch = new treeNode(s.first,p);
-		if (!att[s.first].isNominal)ch->threshold = thr;
+		if (!att[s.first].isNominal){ch->threshold = thr;cout<<"threshold:"<<thr<<endl;}
 		for (auto sub : s.second){
 			ch->child.push_back(MakeSubtree(sub,C));
 		}
@@ -199,13 +199,15 @@ pair<int,vector<vector<int>>> FindBestSplit(const vector<int>& set, const unorde
 	double entro = DBL_MAX;
 	auto parent_p = countLabel(set);
 	double p = (double(parent_p.first))/(parent_p.first+parent_p.second);
-	double parent_entropy = -1*p*log(p)/log(2)-(1-p)*log(1-p)/log(2);
+	double parent_entropy = (-1)*p*log(p)/log(2)-(1-p)*log(1-p)/log(2);
 	for (int id : candidateSplit){
-		auto E = GetEntropy(id,set,thr);
+		double cur_th;
+		auto E = GetEntropy(id,set,cur_th);
 		if (E.first < entro){
 			entro = E.first;
 			res.first = id;
 			res.second = E.second;
+			if (!att[id].isNominal) thr = cur_th;
 		}
 	}
 	if (parent_entropy - entro < 0) res.first = -1;
@@ -222,8 +224,8 @@ pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& s
 		for (auto subset : subsets){
 			auto p = countLabel(subset);
 			double r = double(p.first+p.second)/set.size();
-			double pr = 1.0*p.first/(p.first+p.second);
-			entro += -1*r*(pr*log(pr)/log(2)+(1-pr)*log(1-pr)/log(2));
+			double pr = (1.0*p.first)/(p.first+p.second);
+			entro += (-1)*r*(pr*log(pr)/log(2)+(1-pr)*log(1-pr)/log(2));
 		}
 		return make_pair(entro,subsets);
 	}
@@ -240,9 +242,9 @@ pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& s
 			double entro = 0 ;
 			for (auto subset : subsets){
 				auto p = countLabel(subset);
-				double r = double(p.first+p.second)/set.size();
-				double pr = 1.0*p.first/(p.first+p.second);
-				entro += -1*r*(pr*log(pr)/log(2)+(1-pr)*log(1-pr)/log(2));
+				double r = (double(p.first+p.second))/set.size();
+				double pr = (1.0*p.first)/(p.first+p.second);
+				entro += (-1)*r*(pr*log(pr)/log(2)+(1-pr)*log(1-pr)/log(2));
 			}
 			if (entro < ResEntro){
 				ResEntro = entro;
