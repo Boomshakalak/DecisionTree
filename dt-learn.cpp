@@ -72,9 +72,12 @@ int main(int argc, char const *argv[])
 	}
 	unordered_set<int> attr;
 	for (int i = 0 ; i <att.size();i++){
+		cout<<i<<":"<<att[i].name<<endl;
 		attr.insert(i);
 	}
-	treeNode* root = MakeSubtree(set,attr);
+	// treeNode* root = MakeSubtree(set,attr);
+	double thr = 0 ;
+	auto t = FindBestSplit(set,attr,thr);
 
 	return 0;
 }
@@ -100,7 +103,7 @@ void readData(string file){
 	}
 	else cout<< "file read error"<<endl;
 }
- void getAttribute(string line){
+void getAttribute(string line){
  	attribute nAttr = attribute();
  	att.push_back(nAttr);
  	auto& a = att.back();
@@ -157,7 +160,7 @@ int findNextComma(string line,int cur){
 }
 
 treeNode* MakeSubtree(const vector<int>& set, const unordered_set<int>& candidateSplit){   // p for label_classification pair for this specific pair
-	double thr;
+	double thr = 0;
 	auto C = candidateSplit;
 	pair<int,int> p = countLabel(set);
 	// cout<<"PAss countLabel"<<endl;
@@ -170,7 +173,7 @@ treeNode* MakeSubtree(const vector<int>& set, const unordered_set<int>& candidat
 	}
 	else {
 		C.erase(s.first);
-		// cout<<"Feature used this time  : "<<att[s.first].name<<" ratio:"<<p.first<<":"<<p.second<<endl;
+		cout<<"Feature used this time  : "<<att[s.first].name<<" ratio:"<<p.first<<":"<<p.second<<endl;
 		treeNode* ch = new treeNode(s.first,p);
 		if (!att[s.first].isNominal){ch->threshold = thr;cout<<"threshold:"<<thr<<endl;}
 		for (auto sub : s.second){
@@ -207,7 +210,7 @@ pair<int,vector<vector<int>>> FindBestSplit(const vector<int>& set, const unorde
 			entro = E.first;
 			res.first = id;
 			res.second = E.second;
-			if (!att[id].isNominal) thr = cur_th;
+			thr = cur_th;
 		}
 	}
 	if (parent_entropy - entro < 0) res.first = -1;
@@ -231,9 +234,11 @@ pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& s
 	}
 	else {
 		vector<double> candidate = getThreshold(feature_id,set);
+		cout<<"threshold candidate size:"<<candidate.size()<<endl;
 		double ResEntro = DBL_MAX;
 		vector<vector<int>> ResSets(2,vector<int>());
 		for (auto th : candidate){
+			cout<<"candidate thr:"<<th<<endl;
 			vector<vector<int>> subsets(2,vector<int>());
 			for (auto x : set){
 			int k = data[x][feature_id].r>th?1:0;
