@@ -55,11 +55,11 @@ void readData(string file);
 void getAttribute(string line);
 void getData(string line);
 int findNextComma(string s, int cur);
-pair<int,int> countLabel(const vector<int>& v);
-treeNode* MakeSubtree(const vector<int>& set, const unordered_set<int>& candidateSplit);
-pair<int,vector<vector<int>>> FindBestSplit(const vector<int>& set, const unordered_set<int>& candidateSplit,double& thr);
-pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& set,double& thr);
-vector<double> getThreshold(int feature_id, const vector<int>& set);
+pair<int,int> countLabel( vector<int>& v);
+treeNode* MakeSubtree( vector<int>& set,  unordered_set<int>& candidateSplit);
+pair<int,vector<vector<int>>> FindBestSplit( vector<int>& set,  unordered_set<int>& candidateSplit,double& thr);
+pair<double,vector<vector<int>>> GetEntropy(int feature_id,  vector<int>& set,double& thr);
+vector<double> getThreshold(int feature_id,  vector<int>& set);
 
 int main(int argc, char const *argv[])
 {
@@ -74,7 +74,7 @@ int main(int argc, char const *argv[])
 	}
 	unordered_set<int> attr;
 	for (int i = 0 ; i <att.size()-1;i++){
-		cout<<i<<":"<<att[i].name<<(att[i].isNominal?"Nominal":"REAL")<<endl;
+		// cout<<i<<":"<<att[i].name<<(att[i].isNominal?"Nominal":"REAL")<<endl;
 		attr.insert(i);
 	}
 	treeNode* root = MakeSubtree(set,attr);
@@ -161,7 +161,7 @@ int findNextComma(string line,int cur){
 	return line.size();
 }
 
-treeNode* MakeSubtree(const vector<int>& set, const unordered_set<int>& candidateSplit){   // p for label_classification pair for this specific pair
+treeNode* MakeSubtree(vector<int>& set, unordered_set<int>& candidateSplit){   // p for label_classification pair for this specific pair
 	double thr = 0;
 	auto C = candidateSplit;
 	pair<int,int> p = countLabel(set);
@@ -172,19 +172,21 @@ treeNode* MakeSubtree(const vector<int>& set, const unordered_set<int>& candidat
 		// cout<<"oops"<<endl;
 		treeNode* ch = new treeNode(-1,p);
 		ch->label = p.first > p.second ? 0:1 ;
+		// cout<<"---"<<att.back().nominal_type[ch->label]<<p.first<<" : "<<p.second<<endl;
 		return ch;
 	}
 	else {
-		C.erase(s.first);
-		cout<<"feature_id:"<<s.first<<endl;
-		cout<<"Feature used this time  : "<<att[s.first].name<<" ratio:"<<p.first<<":"<<p.second<<endl;
+		// C.erase(s.first);
+		// cout<<"feature_id:"<<s.first<<endl;
+		// cout<<"Feature used this time  : "<<att[s.first].name<<" ratio:"<<p.first<<":"<<p.second<<endl;
 		treeNode* ch = new treeNode(s.first,p);
 		if (!att[s.first].isNominal){
 			ch->threshold = thr;
 			// cout<<"threshold:"<<thr<<endl;
 		}
 		for (auto sub : s.second){
-			ch->child.push_back(MakeSubtree(sub,C));
+			auto r = MakeSubtree(sub,C);
+			ch->child.push_back(r);
 		}
 		return ch;
 	}
@@ -195,7 +197,7 @@ treeNode* MakeSubtree(const vector<int>& set, const unordered_set<int>& candidat
 // 	}
 // 	return true;
 // }
-pair<int,int> countLabel(const vector<int>& set){
+pair<int,int> countLabel(vector<int>& set){
 	pair<int,int> res = {0,0};
 	for (int i = 0; i < set.size(); i++){
 		data[set[i]].back().nomi?res.first++:res.second++;
@@ -204,7 +206,7 @@ pair<int,int> countLabel(const vector<int>& set){
 }
 
 
-pair<int,vector<vector<int>>> FindBestSplit(const vector<int>& set, const unordered_set<int>& candidateSplit, double& thr){
+pair<int,vector<vector<int>>> FindBestSplit(vector<int>& set, unordered_set<int>& candidateSplit, double& thr){
 	pair<int,vector<vector<int>>> res;
 	double entro = DBL_MAX;
 	auto parent_p = countLabel(set);
@@ -213,7 +215,12 @@ pair<int,vector<vector<int>>> FindBestSplit(const vector<int>& set, const unorde
 	for (int id : candidateSplit){
 		double cur_th = 0;
 		auto E = GetEntropy(id,set,cur_th);
-		cout<<"feature_name:"<<att[id].name<<"  entropy:"<<E.first<<" curTH= "<<cur_th<<endl;
+		// cout<<"feature_name:"<<att[id].name<<"  entropy:"<<E.first<<" curTH= "<<cur_th<<endl;
+		// cout<<"feature_sub_set_size:"<<endl;
+		// for (auto t : E.second){
+		// 	cout<<t.size()<<"  ";
+		// }
+		// cout<<endl;
 		if (E.first < entro){
 			entro = E.first;
 			res.first = id;
@@ -224,7 +231,7 @@ pair<int,vector<vector<int>>> FindBestSplit(const vector<int>& set, const unorde
 	if (parent_entropy - entro < 0) res.first = -1;
 	return res;
 }
-pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& set, double& thr){
+pair<double,vector<vector<int>>> GetEntropy(int feature_id, vector<int>& set, double& thr){
 	if (att[feature_id].isNominal){
 		int n = att[feature_id].nominal_type.size();
 		vector<vector<int>> subsets(n,vector<int>());
@@ -244,10 +251,11 @@ pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& s
 	else {
 		vector<double> candidate = getThreshold(feature_id,set);
 		// cout<<"threshold candidate size:"<<candidate.size()<<endl;
+		// if (set.size()==10)cout<<att[feature_id].name<<endl;
 		double ResEntro = DBL_MAX;
 		vector<vector<int>> ResSets(2,vector<int>());
 		for (auto th : candidate){
-			// cout<<"candidate thr:"<<th<<endl;
+			// if (set.size()==10)cout<<"candidate thr:"<<th<<endl;
 			vector<vector<int>> subsets(2,vector<int>());
 			for (auto x : set){
 			int k = data[x][feature_id].r>th?1:0;
@@ -261,6 +269,7 @@ pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& s
 				double pr = (1.0*p.first)/(p.first+p.second);
 				entro += (-1)*r*(pr*log2(pr)+(1-pr)*log2(1-pr));
 			}
+			// if (set.size()==10)cout<<"entro :"<<entro<<endl;
 			if (entro < ResEntro){
 				ResEntro = entro;
 				ResSets = subsets;
@@ -271,8 +280,8 @@ pair<double,vector<vector<int>>> GetEntropy(int feature_id, const vector<int>& s
 		return make_pair(ResEntro,ResSets);
 	}
 }
-vector<double> getThreshold(int feature_id, const vector<int>& set){
-	
+vector<double> getThreshold(int feature_id, vector<int>& set){
+	// if (set.size()==10)cout<<"the feature "<<att[feature_id].name<<" is using a set of size "<<set.size()<<" to compute entropy"<<endl; 
 	vector<double> C;
 	vector<double> value;
 	unordered_map<double,vector<int>> subsets;
@@ -282,18 +291,23 @@ vector<double> getThreshold(int feature_id, const vector<int>& set){
 		subsets[val].push_back(x);
 	}
 	sort(value.begin(),value.end());
-	// cout<<"values are "<<endl;
-	// for (auto x : value)cout<<x<<" ";
+	// if (set.size()==10){
+	// 	cout<<"values are "<<endl;
+	// 	for (auto x : value)cout<<x<<" ";
 	// 	cout<<endl;
+	// }
 	for (int i = 1 ; i < value.size();i++){
 		auto p1 = countLabel(subsets[value[i-1]]);
 		auto p2 = countLabel(subsets[value[i]]);
-		if ((p1.first && p2.second) || (p1.first && p2.second)){
+		// if (set.size()==10){
+		// 	cout<<p1.first<<" "<<p1.second<<endl;
+		// 	cout<<p2.first<<" "<<p2.second<<endl;
+		// }
+		if ((p1.first && p2.second) || (p1.second && p2.first)){
 			C.push_back((value[i-1] + value[i])/2);
 		}
 	}
 	// if (!C.size()) {
-	// 	cout<<"hello world!"<<endl;
 	// 	cout<<"feature_name: "<<att[feature_id].name<<endl;
 	// }
 	return C;
