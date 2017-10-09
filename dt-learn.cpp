@@ -171,7 +171,7 @@ treeNode* MakeSubtree(vector<int>& set, unordered_set<int>& C, int label,int lev
 		if (p.first > p.second) nLabel = 0;
 		else nLabel = 1;
 	}
-	cout<<endl;
+	// cout<<endl;
 	auto s = FindBestSplit(set,C,thr); 
 	// cout<<"pass findBestSplit"<<endl;
 	if (set.size() < m || C.empty() || s.first < 0 || (p.first == 0 || p.second == 0)){
@@ -181,6 +181,7 @@ treeNode* MakeSubtree(vector<int>& set, unordered_set<int>& C, int label,int lev
 		return ch;
 	}
 	else {
+		// cout<<endl;
 		bool flag = false;
 		for (int i = 0 ; i < level;i++)cout<<"|\t";
 		// C.erase(s.first);
