@@ -56,7 +56,7 @@ void getAttribute(string line);
 void getData(string line);
 int findNextComma(string s, int cur);
 pair<int,int> countLabel( vector<int>& v);
-treeNode* MakeSubtree( vector<int>& set,  unordered_set<int>& candidateSplit,int label);
+treeNode* MakeSubtree( vector<int>& set,  unordered_set<int>& candidateSplit,int label,int level);
 pair<int,vector<vector<int>>> FindBestSplit( vector<int>& set,  unordered_set<int>& candidateSplit,double& thr);
 pair<double,vector<vector<int>>> GetEntropy(int feature_id,  vector<int>& set,double& thr);
 vector<double> getThreshold(int feature_id,  vector<int>& set);
@@ -80,7 +80,7 @@ int main(int argc, char const *argv[])
 		// cout<<i<<":"<<att[i].name<<(att[i].isNominal?"Nominal":"REAL")<<endl;
 		attr.insert(i);
 	}
-	treeNode* root = MakeSubtree(set,attr,o_label);
+	treeNode* root = MakeSubtree(set,attr,o_label,0);
 	// double thr = 0 ;
 	// auto t = FindBestSplit(set,attr,thr);
 
@@ -164,7 +164,7 @@ int findNextComma(string line,int cur){
 	return line.size();
 }
 
-treeNode* MakeSubtree(vector<int>& set, unordered_set<int>& C, int label){   
+treeNode* MakeSubtree(vector<int>& set, unordered_set<int>& C, int label,int level){   
 	double thr = 0;
 	int nLabel;
 	pair<int,int> p = countLabel(set);
@@ -173,26 +173,37 @@ treeNode* MakeSubtree(vector<int>& set, unordered_set<int>& C, int label){
 		if (p.first > p.second) nLabel = 0;
 		else nLabel = 1;
 	}
+	for (int i = 0 ; i < level;i++)cout<<"|\t";
+	if (level) cout<<"["<<p.first<<" "<<p.second<<"]";
+	cout<<endl;
 	auto s = FindBestSplit(set,C,thr); 
 	// cout<<"pass findBestSplit"<<endl;
 	if (set.size() < m || C.empty() || s.first < 0 || (p.first == 0 || p.second == 0)){
 		// cout<<"oops"<<endl;
 		treeNode* ch = new treeNode(-1,p);
 		ch->label = nLabel;
-		// cout<<"---"<<att.back().nominal_type[ch->label]<<p.first<<" : "<<p.second<<endl;
+		cout<<":"<<att.back().nominal_type[ch->label]<<endl;
 		return ch;
 	}
 	else {
+		bool flag = false;
 		// C.erase(s.first);
 		// cout<<"feature_id:"<<s.first<<endl;
-		cout<<"Feature used this time  : "<<att[s.first].name<<" ratio:"<<p.first<<":"<<p.second<<endl;
+		// cout<<"Feature used this time  : "<<att[s.first].name<<" ratio:"<<p.first<<":"<<p.second<<endl;
 		treeNode* ch = new treeNode(s.first,p);
 		if (!att[s.first].isNominal){
 			ch->threshold = thr;
-			cout<<"threshold:"<<thr<<endl;
+			flag = true;
 		}
-		for (auto sub : s.second){
-			auto r = MakeSubtree(sub,C,nLabel);
+		for (int i = 0 ; i < s.second.size(); i++){
+			cout<<att[s.first].name;
+			if (flag){
+				cout<<(i?" > ":" <= ");
+				cout<<thr;
+			}
+			else cout<<" = "<<att[s.first].nominal_type[i];
+			// cout<<endl;
+			auto r = MakeSubtree(s.second[i],C,nLabel,level+1);
 			ch->child.push_back(r);
 		}
 		return ch;
