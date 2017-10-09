@@ -181,9 +181,9 @@ treeNode* MakeSubtree(vector<int>& set, unordered_set<int>& C, int label,int lev
 		return ch;
 	}
 	else {
-		// cout<<endl;
+		cout<<endl;
 		bool flag = false;
-		for (int i = 0 ; i < level;i++)cout<<"|\t";
+		
 		// C.erase(s.first);
 		// cout<<"feature_id:"<<s.first<<endl;
 		// cout<<"Feature used this time  : "<<att[s.first].name<<" ratio:"<<p.first<<":"<<p.second<<endl;
@@ -193,6 +193,7 @@ treeNode* MakeSubtree(vector<int>& set, unordered_set<int>& C, int label,int lev
 			flag = true;
 		}
 		for (int i = 0 ; i < s.second.size(); i++){
+			for (int j = 0 ; j < level;j++)cout<<"|\t";
 			cout<<att[s.first].name;
 			if (flag){
 				cout<<(i?" > ":" <= ");
@@ -202,11 +203,9 @@ treeNode* MakeSubtree(vector<int>& set, unordered_set<int>& C, int label,int lev
 			auto np = countLabel(s.second[i]);
 			cout<<" ["<<np.first<<" "<<np.second<<"]";
 			auto r = MakeSubtree(s.second[i],C,nLabel,level+1,np);
-			if (r->label > -1) cout<<": "<<att.back().nominal_type[r->label];
-			ch->child.push_back(r);
-			cout<<endl;
+			if (r->label > -1) cout<<": "<<att.back().nominal_type[r->label]<<endl;
+			ch->child.push_back(r);			
 		}
-
 		return ch;
 	}
 }
