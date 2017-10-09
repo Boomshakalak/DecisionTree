@@ -56,7 +56,7 @@ void getAttribute(string line);
 void getData(string line);
 int findNextComma(string s, int cur);
 pair<int,int> countLabel( vector<int>& v);
-treeNode* MakeSubtree( vector<int>& set,  unordered_set<int>& candidateSplit);
+treeNode* MakeSubtree( vector<int>& set,  unordered_set<int>& candidateSplit,int label);
 pair<int,vector<vector<int>>> FindBestSplit( vector<int>& set,  unordered_set<int>& candidateSplit,double& thr);
 pair<double,vector<vector<int>>> GetEntropy(int feature_id,  vector<int>& set,double& thr);
 vector<double> getThreshold(int feature_id,  vector<int>& set);
@@ -68,16 +68,19 @@ int main(int argc, char const *argv[])
 	readData("heart_train.arff");
 	// printData();
 	m = 2;
+	int o_label;
 	vector<int> set;
 	for (int i = 0 ; i < data.size();i++){
 		set.push_back(i);
 	}
+	auto pa = countLabel(set);
+	o_label = (pa.first < pa.second?1:0);
 	unordered_set<int> attr;
 	for (int i = 0 ; i <att.size()-1;i++){
 		// cout<<i<<":"<<att[i].name<<(att[i].isNominal?"Nominal":"REAL")<<endl;
 		attr.insert(i);
 	}
-	treeNode* root = MakeSubtree(set,attr);
+	treeNode* root = MakeSubtree(set,attr,o_label);
 	// double thr = 0 ;
 	// auto t = FindBestSplit(set,attr,thr);
 
@@ -161,31 +164,35 @@ int findNextComma(string line,int cur){
 	return line.size();
 }
 
-treeNode* MakeSubtree(vector<int>& set, unordered_set<int>& candidateSplit){   // p for label_classification pair for this specific pair
+treeNode* MakeSubtree(vector<int>& set, unordered_set<int>& C, int label){   
 	double thr = 0;
-	auto C = candidateSplit;
+	int nLabel;
 	pair<int,int> p = countLabel(set);
-	// cout<<"PAss countLabel"<<endl;
+	if (p.first == p.second) nLabel = label;
+	else {
+		if (p.first > p.second) nLabel = 0;
+		else nLabel = 1;
+	}
 	auto s = FindBestSplit(set,C,thr); 
 	// cout<<"pass findBestSplit"<<endl;
 	if (set.size() < m || C.empty() || s.first < 0 || (p.first == 0 || p.second == 0)){
 		// cout<<"oops"<<endl;
 		treeNode* ch = new treeNode(-1,p);
-		ch->label = p.first > p.second ? 0:1 ;
+		ch->label = nLabel;
 		// cout<<"---"<<att.back().nominal_type[ch->label]<<p.first<<" : "<<p.second<<endl;
 		return ch;
 	}
 	else {
 		// C.erase(s.first);
 		// cout<<"feature_id:"<<s.first<<endl;
-		// cout<<"Feature used this time  : "<<att[s.first].name<<" ratio:"<<p.first<<":"<<p.second<<endl;
+		cout<<"Feature used this time  : "<<att[s.first].name<<" ratio:"<<p.first<<":"<<p.second<<endl;
 		treeNode* ch = new treeNode(s.first,p);
 		if (!att[s.first].isNominal){
 			ch->threshold = thr;
-			// cout<<"threshold:"<<thr<<endl;
+			cout<<"threshold:"<<thr<<endl;
 		}
 		for (auto sub : s.second){
-			auto r = MakeSubtree(sub,C);
+			auto r = MakeSubtree(sub,C,nLabel);
 			ch->child.push_back(r);
 		}
 		return ch;
@@ -200,7 +207,7 @@ treeNode* MakeSubtree(vector<int>& set, unordered_set<int>& candidateSplit){   /
 pair<int,int> countLabel(vector<int>& set){
 	pair<int,int> res = {0,0};
 	for (int i = 0; i < set.size(); i++){
-		data[set[i]].back().nomi?res.first++:res.second++;
+		data[set[i]].back().nomi?res.second++:res.first++;
 	}
 	return res;
 }
