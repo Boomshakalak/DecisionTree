@@ -74,7 +74,7 @@ int main(int argc, char const *argv[])
 	}
 	unordered_set<int> attr;
 	for (int i = 0 ; i <att.size()-1;i++){
-		cout<<i<<":"<<att[i].name<<endl;
+		cout<<i<<":"<<att[i].name<<(att[i].isNominal?"Nominal":"REAL")<<endl;
 		attr.insert(i);
 	}
 	treeNode* root = MakeSubtree(set,attr);
@@ -179,7 +179,10 @@ treeNode* MakeSubtree(const vector<int>& set, const unordered_set<int>& candidat
 		cout<<"feature_id:"<<s.first<<endl;
 		cout<<"Feature used this time  : "<<att[s.first].name<<" ratio:"<<p.first<<":"<<p.second<<endl;
 		treeNode* ch = new treeNode(s.first,p);
-		if (!att[s.first].isNominal){ch->threshold = thr;cout<<"threshold:"<<thr<<endl;}
+		if (!att[s.first].isNominal){
+			ch->threshold = thr;
+			// cout<<"threshold:"<<thr<<endl;
+		}
 		for (auto sub : s.second){
 			ch->child.push_back(MakeSubtree(sub,C));
 		}
@@ -208,8 +211,9 @@ pair<int,vector<vector<int>>> FindBestSplit(const vector<int>& set, const unorde
 	double p = (double(parent_p.first))/(parent_p.first+parent_p.second);
 	double parent_entropy = (-1)*p*log2(p)-(1-p)*log2(1-p);
 	for (int id : candidateSplit){
-		double cur_th;
+		double cur_th = 0;
 		auto E = GetEntropy(id,set,cur_th);
+		cout<<"feature_name:"<<att[id].name<<"  entropy:"<<E.first<<" curTH= "<<cur_th<<endl;
 		if (E.first < entro){
 			entro = E.first;
 			res.first = id;
