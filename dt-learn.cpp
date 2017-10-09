@@ -54,8 +54,8 @@ void getAttribute(string line);
 void getData(string line);
 int findNextComma(string s, int cur);
 pair<int,int> countLabel( vector<int>& v);
-treeNode* MakeSubtree( vector<int>& set,  unordered_set<int>& candidateSplit,int label,int level, pair<int,int> p);
-pair<int,vector<vector<int>>> FindBestSplit( vector<int>& set,  unordered_set<int>& candidateSplit,double& thr);
+treeNode* MakeSubtree( vector<int>& set,  vector<int>& candidateSplit,int label,int level, pair<int,int> p);
+pair<int,vector<vector<int>>> FindBestSplit( vector<int>& set,  vector<int>& candidateSplit,double& thr);
 pair<double,vector<vector<int>>> GetEntropy(int feature_id,  vector<int>& set,double& thr);
 vector<double> getThreshold(int feature_id,  vector<int>& set);
 
@@ -73,10 +73,10 @@ int main(int argc, char const *argv[])
 	}
 	auto pa = countLabel(set);
 	o_label = (pa.first < pa.second?1:0);
-	unordered_set<int> attr;
+	vector<int> attr;
 	for (int i = 0 ; i <att.size()-1;i++){
 		// cout<<i<<":"<<att[i].name<<(att[i].isNominal?"Nominal":"REAL")<<endl;
-		attr.insert(i);
+		attr.push_back(i);
 	}
 	treeNode* root = MakeSubtree(set,attr,o_label,0,pa);
 	// double thr = 0 ;
@@ -162,7 +162,7 @@ int findNextComma(string line,int cur){
 	return line.size();
 }
 
-treeNode* MakeSubtree(vector<int>& set, unordered_set<int>& C, int label,int level, pair<int,int> p){   
+treeNode* MakeSubtree(vector<int>& set, vector<int>& C, int label,int level, pair<int,int> p){   
 	double thr = 0;
 	int nLabel;
 	// pair<int,int> p = countLabel(set);
@@ -224,7 +224,7 @@ pair<int,int> countLabel(vector<int>& set){
 }
 
 
-pair<int,vector<vector<int>>> FindBestSplit(vector<int>& set, unordered_set<int>& candidateSplit, double& thr){
+pair<int,vector<vector<int>>> FindBestSplit(vector<int>& set, vector<int>& candidateSplit, double& thr){
 	pair<int,vector<vector<int>>> res;
 	double entro = DBL_MAX;
 	auto parent_p = countLabel(set);
