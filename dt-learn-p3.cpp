@@ -38,7 +38,7 @@ int m =4;
 treeNode* root;
 int n_correct = 0;
 int n_wrong = 0;
-vector<double> r = {0.05, 0.1, 0.2, 0.5};
+vector<int> v = {2, 5, 10, 20};
 
 void reset(){
 	att.clear();
@@ -87,30 +87,35 @@ void run(vector<string>& f){
 	for (int i = 0 ; i <att.size()-1;i++){
 		attr.push_back(i);
 	}
-	for (auto ratio : r){
-		 double minr = 1;
-		 double maxr = 0;
-		 double mean = 0;
-		for (int i = 0 ; i< 10; i++ ){
-			n_wrong = 0;
-			n_correct = 0;
-			vector<int> set = getTrainingSet(ratio,data.size());
-				auto pa = countLabel(set);
-			int o_label = (pa.first < pa.second?1:0);
+	vector<int> set;
+	for (int i = 0 ; i < data.size();i++){
+		set.push_back(i);
+	}
+	for (auto r : v){
+		m = r;
+		 // double minr = 1;
+		 // double maxr = 0;
+		 // double mean = 0;
+		// for (int i = 0 ; i< 10; i++ ){
+		n_wrong = 0;
+		n_correct = 0;
+			// vector<int> set = getTrainingSet(ratio,data.size());
+		auto pa = countLabel(set);
+		int o_label = (pa.first < pa.second?1:0);
 			
-			root = MakeSubtree(set,attr,o_label,0,pa);
+		root = MakeSubtree(set,attr,o_label,0,pa);
 			// cout<<"<Predictions for the Test Set Instances>"<<endl;
-			readData(f[1],false);
+		readData(f[1],false);
 			// cout<<"Number of correctly classified: "<<n_correct<<" Total number of test instances: "<<n_wrong+n_correct<<endl;
-			double pr = 1.0*n_correct/(n_correct+n_wrong);
-			cout<<i<<" "<<"correct rate:"<<pr<<endl;
-			minr = min(minr,pr);
-			maxr = max(maxr,pr);
-			mean+=pr;
+		double pr = 1.0*n_correct/(n_correct+n_wrong);
+			// cout<<i<<" "<<"correct rate:"<<pr<<endl;
+			// minr = min(minr,pr);
+			// maxr = max(maxr,pr);
+			// mean+=pr;
 
-		}
-		mean = mean/10;
-		cout<<"file name: "<<f[0]<<" ratio : "<<ratio<<" mean : "<< mean<<" max : "<<maxr<<" min  :"<<minr<<endl;
+		// }
+		// mean = mean/10;
+		cout<<"file name: "<<f[0]<<" m : "<<m<<" correct_rate : "<<pr<<endl;
 	}
 
 }
