@@ -1,0 +1,8 @@
+file name: heart_train.arff m : 2 correct_rate : 0.679612
+file name: heart_train.arff m : 5 correct_rate : 0.699029
+file name: heart_train.arff m : 10 correct_rate : 0.718447
+file name: heart_train.arff m : 20 correct_rate : 0.728155
+file name: diabetes_train.arff m : 2 correct_rate : 0.68
+file name: diabetes_train.arff m : 5 correct_rate : 0.69
+file name: diabetes_train.arff m : 10 correct_rate : 0.7
+file name: diabetes_train.arff m : 20 correct_rate : 0.72
